@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>Todos & Goals</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/redux/3.7.2/redux.min.js"></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react@16/umd/react.development.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"
+    ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.js"></script>
   </head>
   <body>
     <div>
@@ -19,6 +29,10 @@
       <button id="goalBtn">Add Goal</button>
       <ul id="goals"></ul>
     </div>
+
+    <hr />
+
+    <div id="app"></div>
 
     <script type="text/javascript">
       //redux code
@@ -89,14 +103,53 @@
         };
       }
 
-      function app(state = {}, action) {
-        return {
-          todos: todos(state.todos, action),
-          goals: goals(state.goals, action)
-        };
+      function checkAndDispatch(store, action) {
+        //hack middleware example
+        if (
+          action.type === ADD_TODO &&
+          action.todo.name.toLowerCase().indexOf('bitcoin') !== -1
+        ) {
+          return alert('No, that is a bad idea');
+        }
+
+        if (
+          action.type === ADD_GOAL &&
+          action.goal.name.toLowerCase().indexOf('bitcoin') !== -1
+        ) {
+          return alert('No, that is a bad idea');
+        }
+
+        return store.dispatch(action);
       }
 
-      function todos(state = [], action) {
+      const logger = store => next => action => {
+        console.group(action.type);
+        console.log('The action: ', action);
+        const result = next(action);
+        console.log('The new state: ', store.getState());
+        console.groupEnd();
+        return result;
+      };
+
+      const checker = store => next => action => {
+        if (
+          action.type === ADD_TODO &&
+          action.todo.name.toLowerCase().indexOf('bitcoin') !== -1
+        ) {
+          return alert('No, that is a bad idea');
+        }
+
+        if (
+          action.type === ADD_GOAL &&
+          action.goal.name.toLowerCase().indexOf('bitcoin') !== -1
+        ) {
+          return alert('No, that is a bad idea');
+        }
+
+        return next(action);
+      };
+
+      function todosReducer(state = [], action) {
         switch (action.type) {
           case ADD_TODO:
             return state.concat([action.todo]);
@@ -113,7 +166,7 @@
         }
       }
 
-      function goals(state = [], action) {
+      function goalsReducer(state = [], action) {
         switch (action.type) {
           case ADD_GOAL:
             return state.concat([action.goal]);
@@ -124,10 +177,23 @@
         }
       }
 
-      const store = createStore(app);
+      function app(state = {}, action) {
+        return {
+          todos: todos(state.todos, action),
+          goals: goals(state.goals, action)
+        };
+      }
+
+      const store = Redux.createStore(
+        Redux.combineReducers({
+          todosReducer,
+          goalsReducer
+        }),
+        Redux.applyMiddleware(checker, logger)
+      );
 
       store.subscribe(() => {
-        const { goals, todos } = store.getState();
+        const { goalsReducer: goals, todosReducer: todos } = store.getState();
 
         document.querySelector('#todos').innerHTML = '';
         document.querySelector('#goals').innerHTML = '';
@@ -205,6 +271,93 @@
 
       document.querySelector('#todoBtn').addEventListener('click', addTodo);
       document.querySelector('#goalBtn').addEventListener('click', addGoal);
+    </script>
+
+    <script type="text/babel">
+      const List = ({ items }) => {
+        console.log(items);
+        return (
+          <ul>
+            {items.map(item => (
+              <li key={item.id}>
+                <span>{item.name}</span>
+              </li>
+            ))}
+          </ul>
+        );
+      };
+
+      const Todos = ({ store, todos }) => {
+        const input = React.useRef();
+
+        const addTodo = e => {
+          e.preventDefault;
+          const name = input.current.value;
+          input.current.value = '';
+
+          store.dispatch(
+            addTodoAction({
+              id: Date.now(),
+              name,
+              complete: false
+            })
+          );
+        };
+        return (
+          <div>
+            <h1>Todo List</h1>
+            <input type='text' placeholder='Add Todo' ref={input} />
+            <button onClick={addTodo}>Add Todo</button>
+            <List items={todos} />
+          </div>
+        );
+      };
+
+      const Goals = ({ store, goals }) => {
+        const input = React.useRef();
+
+        const addGoal = e => {
+          e.preventDefault();
+          const name = input.current.value;
+          input.current.value = '';
+
+          store.dispatch(
+            addGoalAction({
+              id: Date.now(),
+              name
+            })
+          );
+        };
+        return (
+          <div>
+            <h1>Goals</h1>
+            <input type='text' placeholder='Add Goal' ref={input} />
+            <button onClick={addGoal}>Add Goal</button>
+            <List items={goals} />
+          </div>
+        );
+      };
+
+      const App = ({ store }) => {
+        // const { todosReducer: todos, goalsReducer: goals } = store.getState();
+        const [todos, setTodos] = React.useState([]);
+        const [goals, setGoals] = React.useState([]);
+
+        store.subscribe(() => {
+          const { todosReducer: t, goalsReducer: g } = store.getState();
+          setTodos(t);
+          setGoals(g);
+        });
+
+        return (
+          <div>
+            <Todos store={store} todos={todos} />
+            <Goals store={store} goals={goals} />
+          </div>
+        );
+      };
+
+      ReactDOM.render(<App store={store} />, document.querySelector('#app'));
     </script>
   </body>
 </html>
