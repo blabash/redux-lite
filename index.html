@@ -209,15 +209,15 @@
 
       const store = Redux.createStore(
         Redux.combineReducers({
-          todosReducer,
-          goalsReducer,
-          loadingReducer
+          todos: todosReducer,
+          goals: goalsReducer,
+          loading: loadingReducer
         }),
         Redux.applyMiddleware(checker, logger)
       );
 
       store.subscribe(() => {
-        const { goalsReducer: goals, todosReducer: todos } = store.getState();
+        const { goals, todos } = store.getState();
 
         document.querySelector('#todos').innerHTML = '';
         document.querySelector('#goals').innerHTML = '';
@@ -383,9 +383,9 @@
       };
 
       const App = ({ store }) => {
-        // const { todosReducer: todos, goalsReducer: goals } = store.getState();
         const [todos, setTodos] = React.useState([]);
         const [goals, setGoals] = React.useState([]);
+        const [loading, setLoading] = React.useState(true);
 
         React.useEffect(() => {
           Promise.all([API.fetchTodos(), API.fetchGoals()]).then(
@@ -396,10 +396,15 @@
         }, []);
 
         store.subscribe(() => {
-          const { todosReducer: t, goalsReducer: g } = store.getState();
-          setTodos(t);
-          setGoals(g);
+          const { todos, goals, loading } = store.getState();
+          setTodos(todos);
+          setGoals(goals);
+          setLoading(loading);
         });
+
+        if (loading) {
+          return <h3>Loading</h3>;
+        }
 
         return (
           <div>
