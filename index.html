@@ -127,52 +127,84 @@
       const store = createStore(app);
 
       store.subscribe(() => {
-        console.log('The new state is ', store.getState());
+        const { goals, todos } = store.getState();
+
+        document.querySelector('#todos').innerHTML = '';
+        document.querySelector('#goals').innerHTML = '';
+
+        todos.forEach(addTodoToDOM);
+        goals.forEach(addGoalToDOM);
       });
 
-      store.dispatch(
-        addTodoAction({
-          id: 0,
-          name: 'Walk the dog',
-          complete: false
-        })
-      );
+      //DOM code
+      function createRemoveButton(onClick) {
+        const removeButton = document.createElement('button');
+        removeButton.innerHTML = 'X';
+        removeButton.addEventListener('click', onClick);
 
-      store.dispatch(
-        addTodoAction({
-          id: 1,
-          name: 'Wash the car',
-          complete: false
-        })
-      );
+        return removeButton;
+      }
 
-      store.dispatch(
-        addTodoAction({
-          id: 2,
-          name: 'Go to the gym',
-          complete: true
-        })
-      );
+      function addTodoToDOM(todo) {
+        const node = document.createElement('li');
+        node.innerText = todo.name;
+        node.style.textDecoration = todo.complete ? 'line-through' : 'none';
 
-      store.dispatch(removeTodoAction(1));
+        const removeBtn = createRemoveButton(() => {
+          store.dispatch(removeTodoAction(todo.id));
+        });
+        node.appendChild(removeBtn);
 
-      store.dispatch(toggleTodoAction(0));
+        node.addEventListener('click', () => {
+          store.dispatch(toggleTodoAction(todo.id));
+        });
 
-      store.dispatch(
-        addGoalAction({
-          id: 0,
-          name: 'Learn Redux'
-        })
-      );
+        document.querySelector('#todos').appendChild(node);
+      }
 
-      store.dispatch(
-        addGoalAction({
-          id: 1,
-          name: 'Lose 20 pounds'
-        })
-      );
+      function addGoalToDOM(goal) {
+        const node = document.createElement('li');
+        node.innerText = goal.name;
 
-      store.dispatch(removeGoalAction(0));
+        const removeBtn = createRemoveButton(() => {
+          store.dispatch(removeGoalAction(goal.id));
+        });
+        node.appendChild(removeBtn);
+
+        document.querySelector('#goals').appendChild(node);
+      }
+
+      function addTodo(params) {
+        const input = document.querySelector('#todo');
+        if (input.value === '') return;
+        const name = input.value;
+        input.value = '';
+
+        store.dispatch(
+          addTodoAction({
+            id: Date.now(),
+            name,
+            complete: false
+          })
+        );
+      }
+
+      function addGoal(params) {
+        const input = document.querySelector('#goal');
+        if (input.value === '') return;
+        const name = input.value;
+        input.value = '';
+
+        store.dispatch(
+          addGoalAction({
+            id: Date.now(),
+            name
+          })
+        );
+      }
+
+      document.querySelector('#todoBtn').addEventListener('click', addTodo);
+      document.querySelector('#goalBtn').addEventListener('click', addGoal);
     </script>
   </body>
 </html>
