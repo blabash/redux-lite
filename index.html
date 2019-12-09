@@ -397,22 +397,22 @@
         );
       };
 
-      const Todos = ({ todos }) => {
+      const Todos = ({ todos, dispatch }) => {
         const input = React.useRef();
-        const store = React.useContext(StoreContext);
+        // const store = React.useContext(StoreContext);
 
         const addTodo = e => {
           e.preventDefault;
           if (input.current.value === '') return;
 
-          store.dispatch(
+          dispatch(
             handleAddTodo(input.current.value, () => (input.current.value = ''))
           );
         };
 
-        const removeTodo = todo => store.dispatch(handleDeleteTodo(todo));
+        const removeTodo = todo => dispatch(handleDeleteTodo(todo));
 
-        const toggleTodo = todo => store.dispatch(handleToggle(todo.id));
+        const toggleTodo = todo => dispatch(handleToggle(todo.id));
 
         return (
           <div>
@@ -424,20 +424,24 @@
         );
       };
 
-      const Goals = ({ goals }) => {
+      const ConnectedTodos = ReactRedux.connect(state => ({
+        todos: state.todos
+      }))(Todos);
+
+      const Goals = ({ goals, dispatch }) => {
         const input = React.useRef();
-        const store = React.useContext(StoreContext);
+        // const store = React.useContext(StoreContext);
 
         const addGoal = e => {
           e.preventDefault();
           if (input.current.value === '') return;
 
-          store.dispatch(
+          dispatch(
             handleAddGoal(input.current.value, () => (input.current.value = ''))
           );
         };
 
-        const removeGoal = goal => store.dispatch(handleDeleteGoal(goal));
+        const removeGoal = goal => dispatch(handleDeleteGoal(goal));
 
         return (
           <div>
@@ -449,22 +453,26 @@
         );
       };
 
-      const App = () => {
+      const ConnectedGoals = ReactRedux.connect(state => ({
+        goals: state.goals
+      }))(Goals);
+
+      const App = ({ dispatch, loading }) => {
         const [todos, setTodos] = React.useState([]);
         const [goals, setGoals] = React.useState([]);
-        const [loading, setLoading] = React.useState(true);
-        const store = React.useContext(StoreContext);
+        // const [loading, setLoading] = React.useState(true);
+        // const store = React.useContext(StoreContext);
 
         React.useEffect(() => {
-          store.dispatch(handleFetchInitialData());
+          dispatch(handleFetchInitialData());
         }, []);
 
-        store.subscribe(() => {
-          const { todos, goals, loading } = store.getState();
-          setTodos(todos);
-          setGoals(goals);
-          setLoading(loading);
-        });
+        // store.subscribe(() => {
+        //   const { todos, goals, loading } = store.getState();
+        //   setTodos(todos);
+        //   setGoals(goals);
+        //   setLoading(loading);
+        // }); hacky way of updating the app after each action is dispatched, downside is this will cause component within the app to re-render instead of the components   that have update state
 
         if (loading) {
           return <h3>Loading</h3>;
@@ -472,18 +480,21 @@
 
         return (
           <div>
-            <Todos todos={todos} />
-            <Goals goals={goals} />
+            <ConnectedTodos />
+            <ConnectedGoals />
           </div>
         );
       };
 
-      const StoreContext = React.createContext();
+      // const StoreContext = React.createContext();
+      const ConnectedApp = ReactRedux.connect(state => ({
+        loading: state.loading
+      }))(App);
 
       ReactDOM.render(
-        <StoreContext.Provider value={store}>
-          <App />
-        </StoreContext.Provider>,
+        <ReactRedux.Provider store={store}>
+          <ConnectedApp />
+        </ReactRedux.Provider>,
         document.querySelector('#app')
       );
     </script>
